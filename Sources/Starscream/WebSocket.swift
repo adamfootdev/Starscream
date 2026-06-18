@@ -22,14 +22,14 @@
 
 import Foundation
 
-public enum ErrorType: Error {
+public enum ErrorType: Error, Sendable {
     case compressionError
     case securityError
     case protocolError //There was an error parsing the WebSocket frames
     case serverError
 }
 
-public struct WSError: Error {
+public struct WSError: Error, Sendable {
     public let type: ErrorType
     public let message: String
     public let code: UInt16
@@ -44,11 +44,11 @@ public struct WSError: Error {
 public protocol WebSocketClient: AnyObject {
     func connect()
     func disconnect(closeCode: UInt16)
-    func write(string: String, completion: (() -> ())?)
-    func write(stringData: Data, completion: (() -> ())?)
-    func write(data: Data, completion: (() -> ())?)
-    func write(ping: Data, completion: (() -> ())?)
-    func write(pong: Data, completion: (() -> ())?)
+    func write(string: String, completion: (@Sendable () -> Void)?)
+    func write(stringData: Data, completion: (@Sendable () -> Void)?)
+    func write(data: Data, completion: (@Sendable () -> Void)?)
+    func write(ping: Data, completion: (@Sendable () -> Void)?)
+    func write(pong: Data, completion: (@Sendable () -> Void)?)
 }
 
 //implements some of the base behaviors
@@ -74,7 +74,7 @@ extension WebSocketClient {
     }
 }
 
-public enum WebSocketEvent {
+public enum WebSocketEvent: @unchecked Sendable {
     case connected([String: String])
     case disconnected(String, UInt16)
     case text(String)
@@ -92,7 +92,7 @@ public protocol WebSocketDelegate: AnyObject {
     func didReceive(event: WebSocketEvent, client: WebSocketClient)
 }
 
-open class WebSocket: WebSocketClient, EngineDelegate {
+open class WebSocket: WebSocketClient, EngineDelegate, @unchecked Sendable {
     private let engine: Engine
     public weak var delegate: WebSocketDelegate?
     public var onEvent: ((WebSocketEvent) -> Void)?
@@ -139,27 +139,27 @@ open class WebSocket: WebSocketClient, EngineDelegate {
         engine.forceStop()
     }
     
-    public func write(data: Data, completion: (() -> ())?) {
+    public func write(data: Data, completion: (@Sendable () -> Void)?) {
          write(data: data, opcode: .binaryFrame, completion: completion)
     }
     
-    public func write(string: String, completion: (() -> ())?) {
+    public func write(string: String, completion: (@Sendable () -> Void)?) {
         engine.write(string: string, completion: completion)
     }
     
-    public func write(stringData: Data, completion: (() -> ())?) {
+    public func write(stringData: Data, completion: (@Sendable () -> Void)?) {
         write(data: stringData, opcode: .textFrame, completion: completion)
     }
     
-    public func write(ping: Data, completion: (() -> ())?) {
+    public func write(ping: Data, completion: (@Sendable () -> Void)?) {
         write(data: ping, opcode: .ping, completion: completion)
     }
     
-    public func write(pong: Data, completion: (() -> ())?) {
+    public func write(pong: Data, completion: (@Sendable () -> Void)?) {
         write(data: pong, opcode: .pong, completion: completion)
     }
     
-    private func write(data: Data, opcode: FrameOpCode, completion: (() -> ())?) {
+    private func write(data: Data, opcode: FrameOpCode, completion: (@Sendable () -> Void)?) {
         engine.write(data: data, opcode: opcode, completion: completion)
     }
     

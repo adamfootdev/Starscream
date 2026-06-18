@@ -28,7 +28,7 @@ public enum FoundationTransportError: Error {
     case timeout
 }
 
-public class FoundationTransport: NSObject, Transport, StreamDelegate {
+public final class FoundationTransport: NSObject, Transport, StreamDelegate, @unchecked Sendable {
     private weak var delegate: TransportEventClient?
     private let workQueue = DispatchQueue(label: "com.vluxe.starscream.websocket", attributes: [])
     private var inputStream: InputStream?
@@ -114,7 +114,7 @@ public class FoundationTransport: NSObject, Transport, StreamDelegate {
         self.delegate = delegate
     }
     
-    public func write(data: Data, completion: @escaping ((Error?) -> ())) {
+    public func write(data: Data, completion: @Sendable @escaping (Error?) -> Void) {
         guard let outStream = outputStream else {
             completion(FoundationTransportError.invalidOutputStream)
             return
@@ -141,20 +141,8 @@ public class FoundationTransport: NSObject, Transport, StreamDelegate {
             return (nil, nil)
         }
         let trust = outputStream.property(forKey: kCFStreamPropertySSLPeerTrust as Stream.PropertyKey) as! SecTrust?
-        var domain = outputStream.property(forKey: kCFStreamSSLPeerName as Stream.PropertyKey) as! String?
+        let domain = outputStream.property(forKey: kCFStreamSSLPeerName as Stream.PropertyKey) as! String?
         
-        if domain == nil,
-            let sslContextOut = CFWriteStreamCopyProperty(outputStream, CFStreamPropertyKey(rawValue: kCFStreamPropertySSLContext)) as! SSLContext? {
-            var peerNameLen: Int = 0
-            SSLGetPeerDomainNameLength(sslContextOut, &peerNameLen)
-            var peerName = Data(count: peerNameLen)
-            let _ = peerName.withUnsafeMutableBytes { (peerNamePtr: UnsafeMutablePointer<Int8>) in
-                SSLGetPeerDomainName(sslContextOut, peerNamePtr, &peerNameLen)
-            }
-            if let peerDomain = String(bytes: peerName, encoding: .utf8), peerDomain.count > 0 {
-                domain = peerDomain
-            }
-        }
         return (trust, domain)
         #endif
     }
@@ -176,7 +164,7 @@ public class FoundationTransport: NSObject, Transport, StreamDelegate {
     
     // MARK: - StreamDelegate
     
-    open func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
+    public func stream(_ aStream: Stream, handle eventCode: Stream.Event) {
         switch eventCode {
         case .hasBytesAvailable:
             if aStream == inputStream {

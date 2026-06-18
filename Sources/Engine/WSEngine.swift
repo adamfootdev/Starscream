@@ -22,8 +22,8 @@
 
 import Foundation
 
-public class WSEngine: Engine, TransportEventClient, FramerEventClient,
-FrameCollectorDelegate, HTTPHandlerDelegate {
+public final class WSEngine: Engine, TransportEventClient, FramerEventClient,
+FrameCollectorDelegate, HTTPHandlerDelegate, @unchecked Sendable {
     private let transport: Transport
     private let framer: Framer
     private let httpHandler: HTTPHandler
@@ -105,12 +105,12 @@ FrameCollectorDelegate, HTTPHandlerDelegate {
         transport.disconnect()
     }
     
-    public func write(string: String, completion: (() -> ())?) {
+    public func write(string: String, completion: (@Sendable () -> Void)?) {
         let data = string.data(using: .utf8)!
         write(data: data, opcode: .textFrame, completion: completion)
     }
     
-    public func write(data: Data, opcode: FrameOpCode, completion: (() -> ())?) {
+    public func write(data: Data, opcode: FrameOpCode, completion: (@Sendable () -> Void)?) {
         writeQueue.async { [weak self] in
             guard let s = self else { return }
             s.mutex.wait()

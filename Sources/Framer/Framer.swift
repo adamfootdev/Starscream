@@ -44,7 +44,7 @@ public enum CloseCode: UInt16 {
     case messageTooBig          = 1009
 }
 
-public enum FrameOpCode: UInt8 {
+public enum FrameOpCode: UInt8, Sendable {
     case continueFrame = 0x0
     case textFrame = 0x1
     case binaryFrame = 0x2
@@ -56,7 +56,7 @@ public enum FrameOpCode: UInt8 {
     case unknown = 100
 }
 
-public struct Frame {
+public struct Frame: Sendable {
     let isFin: Bool
     let needsDecompression: Bool
     let isMasked: Bool
@@ -66,7 +66,7 @@ public struct Frame {
     let closeCode: UInt16 //only used by connectionClose opcode
 }
 
-public enum FrameEvent {
+public enum FrameEvent: @unchecked Sendable {
     case frame(Frame)
     case error(Error)
 }
@@ -83,7 +83,7 @@ public protocol Framer {
     func supportsCompression() -> Bool
 }
 
-public class WSFramer: Framer {
+public final class WSFramer: Framer, @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.vluxe.starscream.wsframer", attributes: [])
     private weak var delegate: FramerEventClient?
     private var buffer = Data()

@@ -31,6 +31,6 @@ public protocol Engine {
     func start(request: URLRequest)
     func stop(closeCode: UInt16)
     func forceStop()
-    func write(data: Data, opcode: FrameOpCode, completion: (() -> ())?)
-    func write(string: String, completion: (() -> ())?)
+    func write(data: Data, opcode: FrameOpCode, completion: (@Sendable () -> Void)?)
+    func write(string: String, completion: (@Sendable () -> Void)?)
 }

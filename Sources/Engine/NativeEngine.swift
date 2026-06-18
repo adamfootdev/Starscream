@@ -23,7 +23,7 @@
 import Foundation
 
 @available(macOS 10.15, iOS 13.0, watchOS 6.0, tvOS 13.0, *)
-public class NativeEngine: NSObject, Engine, URLSessionDataDelegate, URLSessionWebSocketDelegate {
+public final class NativeEngine: NSObject, Engine, URLSessionDataDelegate, URLSessionWebSocketDelegate, @unchecked Sendable {
     private var task: URLSessionWebSocketTask?
     weak var delegate: EngineDelegate?
 
@@ -47,13 +47,13 @@ public class NativeEngine: NSObject, Engine, URLSessionDataDelegate, URLSessionW
         stop(closeCode: UInt16(URLSessionWebSocketTask.CloseCode.abnormalClosure.rawValue))
     }
 
-    public func write(string: String, completion: (() -> ())?) {
+    public func write(string: String, completion: (@Sendable () -> Void)?) {
         task?.send(.string(string), completionHandler: { (error) in
             completion?()
         })
     }
 
-    public func write(data: Data, opcode: FrameOpCode, completion: (() -> ())?) {
+    public func write(data: Data, opcode: FrameOpCode, completion: (@Sendable () -> Void)?) {
         switch opcode {
         case .binaryFrame:
             task?.send(.data(data), completionHandler: { (error) in
